@@ -1,0 +1,56 @@
+id: code_analysis_pipeline
+name: Code Analysis Pipeline
+description: Analyze Python code for quality and potential issues
+version: 1.0.0
+category: Development
+
+inputs:
+  - name: code
+    type: string
+    required: true
+    description: Python code to analyze
+
+steps:
+  - id: 1
+    name: Count Lines
+    type: tool
+    toolName: code_executor
+    toolArgs:
+      code: |
+        code = "${inputs.code}"
+        lines = code.split("\n")
+        result = {
+          "total_lines": len(lines),
+          "code_lines": len([l for l in lines if l.strip() and not l.strip().startswith("#")]),
+          "comment_lines": len([l for l in lines if l.strip().startswith("#")]),
+          "blank_lines": len([l for l in lines if not l.strip()])
+        }
+    outputVar: line_counts
+
+  - id: 2
+    name: Detect Issues
+    type: tool
+    toolName: code_executor
+    toolArgs:
+      code: |
+        code = "${inputs.code}"
+        issues = []
+        if "eval(" in code or "exec(" in code:
+            issues.append("Uses eval/exec - potential security risk")
+        if "import *" in code:
+            issues.append("Uses wildcard imports")
+        if len(code.split("\n")) > 100:
+            issues.append("File too long (>100 lines)")
+        result = {"issues": issues, "count": len(issues)}
+    outputVar: issues
+
+  - id: 3
+    name: Generate Report
+    type: output
+    outputVar: analysis_report
+
+outputs:
+  - name: line_counts
+    value: ${line_counts}
+  - name: issues
+    value: ${issues}

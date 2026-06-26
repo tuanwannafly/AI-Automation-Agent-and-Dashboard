@@ -1,0 +1,50 @@
+id: web_research_agent
+name: Web Research Agent
+description: Research a topic using web search and generate summary
+version: 1.0.0
+category: Research
+
+inputs:
+  - name: topic
+    type: string
+    required: true
+    description: Topic to research
+  - name: max_results
+    type: number
+    required: false
+    description: Maximum search results (default: 5)
+
+steps:
+  - id: 1
+    name: Search Web
+    type: tool
+    toolName: web_search
+    toolArgs:
+      query: ${inputs.topic}
+      num_results: ${inputs.max_results|5}
+    outputVar: search_results
+
+  - id: 2
+    name: Process Results
+    type: tool
+    toolName: code_executor
+    toolArgs:
+      code: |
+        results = "${search_results}"
+        summary = []
+        if "results" in results:
+            for r in results["results"][:3]:
+                summary.append(f"- {r.get('title', 'No title')}: {r.get('snippet', 'No snippet')}")
+        result = {"summary": "\n".join(summary)}
+    outputVar: summary
+
+  - id: 3
+    name: Generate Report
+    type: output
+    outputVar: research_report
+
+outputs:
+  - name: search_results
+    value: ${search_results}
+  - name: summary
+    value: ${summary}

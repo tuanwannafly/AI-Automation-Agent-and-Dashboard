@@ -1,0 +1,61 @@
+id: cv_analysis_pipeline
+name: CV Analysis Pipeline
+description: Analyze CV/resume PDF and extract key information
+version: 1.0.0
+category: HR
+
+inputs:
+  - name: cv_file_id
+    type: string
+    required: true
+    description: File ID of uploaded CV
+
+steps:
+  - id: 1
+    name: Extract Text from CV
+    type: tool
+    toolName: file_parser
+    toolArgs:
+      file_id: ${inputs.cv_file_id}
+    outputVar: cv_text
+
+  - id: 2
+    name: Extract Personal Info
+    type: tool
+    toolName: code_executor
+    toolArgs:
+      code: |
+        import re
+        text = "${cv_text}"
+        name = re.search(r'([A-Z][a-z]+ [A-Z][a-z]+)', text)
+        email = re.search(r'([\w.]+@[\w.]+)', text)
+        phone = re.search(r'(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})', text)
+        result = {
+          "name": name.group(1) if name else "Unknown",
+          "email": email.group(1) if email else "Unknown",
+          "phone": phone.group(1) if phone else "Unknown"
+        }
+    outputVar: personal_info
+
+  - id: 3
+    name: Extract Skills
+    type: tool
+    toolName: code_executor
+    toolArgs:
+      code: |
+        skills_keywords = ["python", "javascript", "react", "node", "aws", "docker", "kubernetes", "sql", "mongodb"]
+        text = "${cv_text}".lower()
+        found_skills = [s for s in skills_keywords if s in text]
+        result = {"skills": found_skills}
+    outputVar: skills
+
+  - id: 4
+    name: Generate Summary
+    type: output
+    outputVar: analysis_result
+
+outputs:
+  - name: personal_info
+    value: ${personal_info}
+  - name: skills
+    value: ${skills}
