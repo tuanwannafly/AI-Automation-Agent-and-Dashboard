@@ -2,6 +2,7 @@ from app.agent.graph import agent_graph
 from app.agent.state import AgentState
 from app.api.websocket import ConnectionManager
 from app.models.chat import ChatRequest
+from app.services.session import SessionManager
 import asyncio
 import time
 
@@ -49,6 +50,9 @@ class AgentRunner:
             # Final state
             final_state = await agent_graph.ainvoke(initial_state)
             elapsed = int((time.time() - start_time) * 1000)
+
+            # Save to Redis
+            await SessionManager.save_state(self.session_id, final_state)
 
             await self.emit({
                 "type": "DONE",
