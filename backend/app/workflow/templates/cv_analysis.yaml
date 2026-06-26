@@ -1,0 +1,75 @@
+workflow:
+  name: "CV Analysis Pipeline"
+  version: "1.0"
+  description: "Tự động phân tích CV ứng viên, so sánh với JD và tạo feedback chi tiết"
+  
+  inputs:
+    - name: cv_text
+      type: text
+      required: true
+    - name: jd_text
+      type: text
+      required: false
+      default: ""
+    - name: provider
+      type: text
+      required: false
+      default: "groq"
+  
+  steps:
+    - id: analyze_skills
+      tool: llm_call
+      description: "Phân tích technical skills, soft skills và kinh nghiệm"
+      provider: "{{ inputs.provider }}"
+      prompt: |
+        Phân tích CV sau và trả về JSON với các field:
+        {
+          "technical_skills": [...],
+          "soft_skills": [...],
+          "years_experience": number,
+          "education": "...",
+          "languages": [...],
+          "notable_projects": [...]
+        }
+        
+        CV:
+        {{ inputs.cv_text }}
+        
+        Chỉ trả JSON, không giải thích thêm.
+      output_as: skills_analysis
+
+    - id: search_market
+      tool: web_search
+      description: "Tìm thông tin thị trường lao động liên quan"
+      input:
+        query: "{{ inputs.cv_text[:100] }} developer job market 2025 Vietnam salary"
+      output_as: market_info
+
+    - id: generate_feedback
+      tool: llm_call
+      description: "Tổng hợp feedback và đưa ra gợi ý cải thiện"
+      provider: "{{ inputs.provider }}"
+      prompt: |
+        Dựa trên phân tích dưới đây, hãy tạo feedback chi tiết bằng tiếng Việt:
+        
+        **Skills Analysis:**
+        {{ steps.analyze_skills.output }}
+        
+        **Job Description (nếu có):**
+        {{ inputs.jd_text | default("Không cung cấp JD") }}
+        
+        **Thông tin thị trường:**
+        {{ steps.search_market.output | string | truncate(1000) }}
+        
+        Hãy trả về:
+        1. **Điểm mạnh** (3-5 điểm)
+        2. **Khoảng cách kỹ năng** (nếu có JD)
+        3. **Gợi ý cải thiện CV** (cụ thể, actionable)
+        4. **Score tổng thể** (0-100) với giải thích
+        5. **Mức lương tham khảo** dựa trên thị trường
+      output_as: final_feedback
+  
+  outputs:
+    - skills_analysis
+    - market_info
+    - final_feedback
