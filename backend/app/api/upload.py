@@ -33,3 +33,6 @@ async def upload_file(file: UploadFile = File(...)):
         "text_length": len(text),
         "status": "indexed",
     }
+from fastapi import APIRouter
+
+router = APIRouter()

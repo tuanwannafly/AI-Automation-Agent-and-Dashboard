@@ -1,0 +1,47 @@
+workflow:
+  name: "Data Analysis"
+  version: "1.0"
+  description: "Analyze data using Python code execution"
+  
+  inputs:
+    - name: data_description
+      type: text
+      required: true
+    - name: analysis_type
+      type: text
+      required: false
+      default: "summary statistics"
+  
+  steps:
+    - id: analyze_data
+      tool: code_executor
+      description: "Run Python analysis code"
+      code: |
+        import pandas as pd
+        import numpy as np
+        
+        # Sample data analysis
+        data = {
+            'name': ['A', 'B', 'C', 'D'],
+            'value': [10, 25, 15, 30]
+        }
+        df = pd.DataFrame(data)
+        
+        result = df.describe()
+        print(result)
+      output_as: analysis_result
+
+    - id: format_output
+      tool: llm_call
+      description: "Format analysis results"
+      prompt: |
+        Format this data analysis result in a clear, readable way:
+        
+        {{ steps.analyze_data.output }}
+        
+        Analysis type: {{ inputs.analysis_type }}
+      output_as: formatted_result
+  
+  outputs:
+    - analysis_result
+    - formatted_result

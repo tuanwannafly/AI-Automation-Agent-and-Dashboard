@@ -1,0 +1,33 @@
+workflow:
+  name: "Market Research"
+  version: "1.0"
+  description: "Research market trends and summarize findings"
+  
+  inputs:
+    - name: topic
+      type: text
+      required: true
+    - name: max_results
+      type: number
+      required: false
+      default: 5
+  
+  steps:
+    - id: search_web
+      tool: web_search
+      description: "Search web for latest information"
+      input:
+        query: "{{ inputs.topic }} 2025"
+        max_results: "{{ inputs.max_results }}"
+      output_as: search_results
+
+    - id: summarize
+      tool: summarizer
+      description: "Summarize search results"
+      input:
+        text: "{{ steps.search_web.output | string }}"
+      output_as: summary
+  
+  outputs:
+    - search_results
+    - summary
