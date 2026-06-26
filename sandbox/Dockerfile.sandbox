@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+RUN pip install --no-cache-dir \
+    numpy==1.26.4 \
+    pandas==2.2.1 \
+    matplotlib==3.8.3 \
+    scikit-learn==1.4.1 \
+    pdfplumber==0.11.0
+
+RUN useradd -m -u 1000 sandbox
+USER sandbox
+WORKDIR /home/sandbox
+
+COPY executor.py /home/sandbox/
+ENTRYPOINT ["python", "executor.py"]

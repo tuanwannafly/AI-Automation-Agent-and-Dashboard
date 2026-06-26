@@ -55,3 +55,18 @@ async def planner_node(state: AgentState) -> AgentState:
             {"type": "THINKING", "content": f"Plan: {plan}", "step": state.get("current_step", 0)}
         ]
     }
+
+
+async def planner_node(state: AgentState) -> AgentState:
+    """Planner node - to be implemented in Phase 3."""
+    return state
+
+
+async def router_node(state: AgentState) -> AgentState:
+    """Router node - to be implemented in Phase 3."""
+    return state
+
+
+async def final_answer_node(state: AgentState) -> AgentState:
+    """Final answer node - to be implemented in Phase 3."""
+    return state

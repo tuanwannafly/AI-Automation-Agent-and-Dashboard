@@ -33,3 +33,8 @@ Tool Results:
             {"type": "DONE", "content": "Final answer generated"}
         ]
     }
+
+
+async def final_answer_node(state: AgentState) -> AgentState:
+    """Final answer node - to be implemented in Phase 3."""
+    return state

@@ -14,6 +14,16 @@ def build_agent_graph() -> StateGraph:
     graph.add_node("router", router_node)
     graph.add_node("final_answer", final_answer_node)
 
+
+def build_agent_graph() -> StateGraph:
+    """Build LangGraph StateGraph with placeholder nodes."""
+    graph = StateGraph(AgentState)
+
+    # Add placeholder nodes - will be implemented in Phase 3
+    graph.add_node("planner", lambda state: state)
+    graph.add_node("router", lambda state: state)
+    graph.add_node("final_answer", lambda state: state)
+
     # Define flow
     graph.set_entry_point("planner")
     graph.add_edge("planner", "router")
@@ -24,6 +34,7 @@ def build_agent_graph() -> StateGraph:
         lambda state: "final_answer" if _should_finish(state) else "planner",
         {"planner": "planner", "final_answer": "final_answer"}
     )
+    graph.add_edge("router", "final_answer")
     graph.add_edge("final_answer", END)
 
     return graph.compile()

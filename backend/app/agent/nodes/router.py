@@ -61,3 +61,8 @@ def _resolve_templates(input_dict: dict, previous_results: list) -> dict:
                 value = value.replace(f"{{{{step_{i}_result}}}}", str(result))
         resolved[key] = value
     return resolved
+
+
+async def router_node(state: AgentState) -> AgentState:
+    """Router node - to be implemented in Phase 3."""
+    return state
