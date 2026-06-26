@@ -21,3 +21,6 @@ async def create_chat(request: ChatRequest, background_tasks: BackgroundTasks):
         ws_url=f"ws://localhost:8000/ws/{session_id}",
         status="running"
     )
+from fastapi import APIRouter
+
+router = APIRouter()

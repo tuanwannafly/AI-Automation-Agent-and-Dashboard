@@ -30,3 +30,5 @@ async def create_session():
     session_id = str(uuid.uuid4())
     session_store[session_id] = SessionState(session_id=session_id)
     return {"session_id": session_id}
+
+router = APIRouter()

@@ -27,3 +27,6 @@ async def get_run(run_id: str):
     if run_id not in run_store:
         raise HTTPException(status_code=404, detail="Run not found")
     return run_store[run_id]
+from fastapi import APIRouter
+
+router = APIRouter()
