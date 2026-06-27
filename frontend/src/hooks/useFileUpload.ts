@@ -38,6 +38,7 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
       });
 
       updateFile(fileId, {
+        id: result.id,
         status: result.status,
         progress: 100
       });

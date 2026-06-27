@@ -40,11 +40,27 @@ class ChromaVectorStore:
             scored.append((score, doc))
         
         scored.sort(reverse=True, key=lambda x: x[0])
-        return [doc for score, doc in scored[:limit]]
+        results = []
+        for score, doc in scored[:limit]:
+            results.append({**doc, "score": score})
+        return results
+    
+    _STOPWORDS = {
+        "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
+        "be", "been", "being", "to", "of", "in", "on", "at", "for", "with",
+        "by", "from", "as", "this", "that", "these", "those", "it", "its",
+        "what", "which", "who", "whom", "whose", "when", "where", "why",
+        "how", "do", "does", "did", "can", "could", "should", "would",
+        "will", "shall", "may", "might", "must", "have", "has", "had",
+        "i", "you", "he", "she", "we", "they", "me", "him", "her", "us",
+        "them", "my", "your", "his", "our", "their", "tell", "about",
+        "give", "me", "please", "show", "summarize",
+    }
     
     def _simple_similarity(self, query: str, text: str) -> float:
-        query_words = set(query.split())
-        text_words = set(text.split())
+        import re
+        query_words = {w for w in re.findall(r"\w+", query.lower()) if w not in self._STOPWORDS}
+        text_words = {w for w in re.findall(r"\w+", text.lower()) if w not in self._STOPWORDS}
         if not query_words or not text_words:
             return 0.0
         intersection = query_words & text_words
@@ -52,6 +68,8 @@ class ChromaVectorStore:
 
 class RAGEngine:
     """Retrieval Augmented Generation Engine"""
+    
+    MIN_RELEVANCE_THRESHOLD = 0.05
     
     def __init__(self):
         self.vector_store = ChromaVectorStore()
@@ -86,16 +104,32 @@ class RAGEngine:
             print(f"Error indexing file {file_id}: {e}")
             return False
     
-    def query(self, query: str, limit: int = 5, file_id: Optional[str] = None) -> List[Dict]:
-        results = self.vector_store.query("documents", query, limit=limit*2)
+    def query(self, query: str, limit: int = 5, file_id: Optional[str] = None, file_ids: Optional[List[str]] = None) -> List[Dict]:
+        # Scope to specific files (session-scoped RAG). This prevents previously
+        # uploaded documents from leaking into a new conversation.
+        allowed_ids = None
+        if file_ids is not None:
+            allowed_ids = set(file_ids)
+        elif file_id is not None:
+            allowed_ids = {file_id}
         
-        if file_id:
-            results = [r for r in results if r["metadata"].get("file_id") == file_id]
+        # Fetch a wide candidate pool so ranking stays meaningful even for
+        # generic queries like "summarize this document".
+        pool_limit = limit * 4 if allowed_ids is not None else limit * 2
+        results = self.vector_store.query("documents", query, limit=pool_limit)
         
-        return results[:limit]
+        if allowed_ids is not None:
+            results = [r for r in results if r["metadata"].get("file_id") in allowed_ids]
+            # When files are explicitly attached, the user wants them read regardless
+            # of keyword overlap, so return the top-ranked chunks without a cutoff.
+            return results[:limit]
+        else:
+            # No explicit file attachment: apply a relevance cutoff to avoid noise.
+            results = [r for r in results if r.get("score", 0) >= self.MIN_RELEVANCE_THRESHOLD]
+            return results[:limit]
     
-    def query_with_context(self, query: str, limit: int = 5) -> str:
-        results = self.query(query, limit)
+    def query_with_context(self, query: str, limit: int = 5, file_id: Optional[str] = None, file_ids: Optional[List[str]] = None) -> str:
+        results = self.query(query, limit, file_id=file_id, file_ids=file_ids)
         
         if not results:
             return "No relevant documents found."

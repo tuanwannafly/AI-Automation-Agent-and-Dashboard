@@ -2,9 +2,24 @@
 
 import { useFileUploadStore } from '@/store/fileUploadStore';
 import { File, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import api from '@/lib/api';
 
 export function UploadedFileList() {
   const { files, removeFile } = useFileUploadStore();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (fileId: string) => {
+    setDeletingId(fileId);
+    try {
+      await api.deleteFile(fileId);
+    } catch (error) {
+      console.error('Failed to delete file from server:', error);
+    } finally {
+      removeFile(fileId);
+      setDeletingId(null);
+    }
+  };
 
   if (files.length === 0) return null;
 
@@ -47,10 +62,15 @@ export function UploadedFileList() {
               </div>
             )}
             <button
-              onClick={() => removeFile(file.id)}
-              className="p-1 hover:bg-gray-700 rounded transition-colors"
+              onClick={() => handleDelete(file.id)}
+              disabled={deletingId === file.id}
+              className="p-1 hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
             >
-              <XCircle className="w-4 h-4 text-gray-500 hover:text-gray-300" />
+              {deletingId === file.id ? (
+                <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4 text-gray-500 hover:text-gray-300" />
+              )}
             </button>
           </div>
         </div>

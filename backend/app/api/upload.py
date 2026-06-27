@@ -42,6 +42,7 @@ async def upload_file(file: UploadFile = File(...)):
         return JSONResponse(content={
             "success": True,
             "data": {
+                "id": file_id,
                 "fileId": file_id,
                 "filename": file.filename,
                 "size": file_size,
@@ -78,6 +79,7 @@ async def list_uploads():
                 ext = filename.split(".")[-1]
                 file_id = filename.replace(f".{ext}", "")
                 files.append({
+                    "id": file_id,
                     "fileId": file_id,
                     "filename": filename,
                     "size": stat.st_size,

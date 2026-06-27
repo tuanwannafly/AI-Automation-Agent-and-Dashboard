@@ -1,7 +1,10 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from the backend directory explicitly
+# config.py is at backend/app/core/config.py, so we need 3 dirname levels to reach backend/
+_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
+load_dotenv(_env_path)
 
 class Settings:
     PROJECT_NAME: str = "AI Automation Agent"
@@ -13,7 +16,7 @@ class Settings:
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
     DEFAULT_LLM_PROVIDER: str = "groq"
-    DEFAULT_MODEL_GROQ: str = "llama-3.1-70b-versatile"
+    DEFAULT_MODEL_GROQ: str = "llama-3.3-70b-versatile"
     DEFAULT_MODEL_OPENAI: str = "gpt-4o-mini"
     DEFAULT_MODEL_GEMINI: str = "gemini-1.5-flash"
     

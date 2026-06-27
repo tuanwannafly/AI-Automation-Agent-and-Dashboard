@@ -92,13 +92,25 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         const { messages } = state;
         const lastMessage = messages[messages.length - 1];
         
-        if (lastMessage && lastMessage.role === 'assistant' && state.isStreaming) {
+        if (lastMessage && lastMessage.role === 'assistant') {
           set((state) => ({
             messages: state.messages.map((msg, idx) => 
               idx === messages.length - 1
                 ? { ...msg, content: msg.content + event.data.token }
                 : msg
-            )
+            ),
+            isStreaming: true
+          }));
+        } else {
+          const newAssistantMessage: Message = {
+            id: event.id,
+            role: 'assistant',
+            content: event.data.token,
+            timestamp: event.timestamp
+          };
+          set((state) => ({
+            messages: [...state.messages, newAssistantMessage],
+            isStreaming: true
           }));
         }
         break;

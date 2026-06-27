@@ -13,9 +13,6 @@ class ApiClient {
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
       timeout: 60000,
     });
 
@@ -52,7 +49,6 @@ class ApiClient {
     formData.append('file', file);
 
     const response = await this.client.post<ApiResponse<UploadedFile>>('/api/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (event) => {
         if (event.total && onProgress) {
           onProgress((event.loaded / event.total) * 100);
@@ -61,6 +57,15 @@ class ApiClient {
     });
 
     return response.data.data!;
+  }
+
+  async deleteFile(fileId: string): Promise<void> {
+    await this.client.delete(`/api/uploads/${fileId}`);
+  }
+
+  async getUploadedFiles(): Promise<UploadedFile[]> {
+    const response = await this.client.get<ApiResponse<{ files: UploadedFile[] }>>('/api/uploads');
+    return response.data.data?.files || [];
   }
 
   async getWorkflows(): Promise<WorkflowConfig[]> {
@@ -109,7 +114,7 @@ class ApiClient {
     return response.data;
   }
 
-  async healthCheck(): Promise<{ status: string; version: string; uptime: number }> {
+  async healthCheck(): Promise<{ status: string; version: string; uptime: number | string }> {
     const response = await this.client.get('/health');
     return response.data;
   }
