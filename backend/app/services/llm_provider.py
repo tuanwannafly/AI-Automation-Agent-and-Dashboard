@@ -14,7 +14,7 @@ class BaseLLMProvider(ABC):
         pass
 
 class GroqProvider(BaseLLMProvider):
-    def __init__(self, api_key: str, model: str = "llama-3.1-70b-versatile"):
+    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
         self.api_key = api_key
         self.model = model
         self._client = None

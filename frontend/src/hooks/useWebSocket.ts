@@ -20,11 +20,14 @@ export function useWebSocket({
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
+  const pendingMessageRef = useRef<any>(null);
   const MAX_RETRIES = 5;
   const BASE_RECONNECT_DELAY = 1000;
   const PING_INTERVAL = 30000;
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  const onErrorRef = useRef(onError);
   const handleAgentEvent = useAgentStore((state) => state.handleAgentEvent);
 
   const cleanup = useCallback(() => {
@@ -55,7 +58,10 @@ export function useWebSocket({
 
     cleanup();
 
-    const wsUrl = `ws://localhost:8000/ws/${sessionId}`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const wsProtocol = apiUrl.startsWith('https') ? 'wss' : 'ws';
+    const wsHost = apiUrl.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}://${wsHost}/api/ws/${sessionId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -63,7 +69,14 @@ export function useWebSocket({
       retryCountRef.current = 0;
       wsRef.current = ws;
       startPingInterval(ws);
-      onConnect?.();
+      onConnectRef.current?.();
+      
+      // Send pending message immediately after connect
+      if (pendingMessageRef.current) {
+        console.log('[useWebSocket] Sending pending message on open:', pendingMessageRef.current);
+        ws.send(JSON.stringify(pendingMessageRef.current));
+        pendingMessageRef.current = null;
+      }
     };
 
     ws.onmessage = (event) => {
@@ -89,7 +102,7 @@ export function useWebSocket({
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
-      onError?.('WebSocket connection error');
+      onErrorRef.current?.('WebSocket connection error');
     };
 
     ws.onclose = (event) => {
@@ -101,7 +114,7 @@ export function useWebSocket({
         pingIntervalRef.current = null;
       }
       
-      onDisconnect?.();
+      onDisconnectRef.current?.();
 
       if (!event.wasClean && retryCountRef.current < MAX_RETRIES) {
         const delay = BASE_RECONNECT_DELAY * Math.pow(2, retryCountRef.current);
@@ -115,13 +128,15 @@ export function useWebSocket({
     };
 
     wsRef.current = ws;
-  }, [sessionId, enabled, cleanup, startPingInterval, handleAgentEvent, onConnect, onDisconnect, onError]);
+  }, [sessionId, enabled, cleanup, startPingInterval, handleAgentEvent]);
 
   const sendMessage = useCallback((message: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      console.log('[useWebSocket] Sending message via WebSocket:', message);
       wsRef.current.send(JSON.stringify(message));
     } else {
-      console.warn('WebSocket is not connected');
+      console.log('[useWebSocket] Queueing message, readyState:', wsRef.current?.readyState);
+      pendingMessageRef.current = message;
     }
   }, []);
 

@@ -43,6 +43,7 @@ export function FileUploadZone({ onFileUploaded }: FileUploadZoneProps) {
       });
 
       updateFile(fileId, {
+        id: result.id,
         status: result.status,
         progress: 100
       });

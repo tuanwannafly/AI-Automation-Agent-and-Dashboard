@@ -8,7 +8,18 @@ from ..services.orchestrator import SessionManager
 
 router = APIRouter()
 
-@router.get("/")
+# Specific routes must come before dynamic routes
+@router.get("/export")
+async def export_all_sessions(format: str = "json"):
+    """Export all sessions - placeholder"""
+    return JSONResponse(content={"success": True, "data": {"content": "", "filename": "all_sessions.json"}})
+
+@router.get("/context")
+async def get_all_sessions_context():
+    """Get context for all sessions - placeholder"""
+    return JSONResponse(content={"success": True, "data": {"sessions": []}})
+
+@router.get("")
 async def list_sessions():
     sessions = SessionManager.list_sessions()
     return JSONResponse(content={

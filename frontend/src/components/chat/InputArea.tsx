@@ -12,9 +12,13 @@ export function InputArea({ onSend, disabled = false }: InputAreaProps) {
   const [input, setInput] = useState('');
 
   const handleSend = () => {
+    console.log('[InputArea] handleSend called, input:', input, 'disabled:', disabled);
     if (input.trim() && !disabled) {
+      console.log('[InputArea] Calling onSend with:', input.trim());
       onSend(input.trim());
       setInput('');
+    } else {
+      console.log('[InputArea] Not sending: input empty or disabled');
     }
   };
 
